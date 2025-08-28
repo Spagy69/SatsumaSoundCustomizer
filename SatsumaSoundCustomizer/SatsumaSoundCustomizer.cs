@@ -329,7 +329,7 @@ namespace SatsumaSoundCustomizer
 
             activeTimer1 += Time.deltaTime;
 
-            if (activeTimer1 >= 1f && proccesCanRepeat == false)
+            if (activeTimer1 >= 0.1f && proccesCanRepeat == false)
             {
                 coolantTemp = coolingFsm.FsmVariables.GetFsmFloat("CoolantTemp").Value;
 
@@ -337,6 +337,7 @@ namespace SatsumaSoundCustomizer
                 {
                     // Calls Cold Engine Carburators
                     // Calls Exhaust
+                    Exhaust.ExhaustSoundChange();
                     if (coldLoop == false) 
                     {
                     ColdEngineCarburators.ColdEngineCarburatorsSounds();
@@ -347,6 +348,7 @@ namespace SatsumaSoundCustomizer
                 {
                     // Calls Warm Engine Carburators
                     // Calls Exhaust
+                    Exhaust.ExhaustSoundChange();
                     WarmEngineCarburators.WarmEngineCarburatorsSounds();
                     ModConsole.Print("coolant warm");
                     proccesCanRepeat = true;
@@ -356,6 +358,7 @@ namespace SatsumaSoundCustomizer
                 {
                     // Calls Warm Engine Carburators
                     // Calls Exhaust
+                    Exhaust.ExhaustSoundChange();
                     WarmEngineCarburators.WarmEngineCarburatorsSounds();
                     proccesCanRepeat = true;
                     startedOrNot = true;
