@@ -17,8 +17,6 @@ namespace SatsumaSoundCustomizer
         {
             GameObject exhaustPipe = GameObject.Find("SATSUMA(557kg, 248)/MiscParts/pivot_exhaust pipe/exhaust pipe(Clone)");
             GameObject exhaustMuffler = GameObject.Find("SATSUMA(557kg, 248)/MiscParts/pivot_exhaust_muffler/exhaust muffler(Clone)");
-            GameObject racingExhaustPipe = GameObject.Find("");
-            GameObject racingExhaustMuffler = GameObject.Find("");
 
         }
 

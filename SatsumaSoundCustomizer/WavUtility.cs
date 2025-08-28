@@ -10,7 +10,7 @@ public static class WavUtility
         bool flag = !File.Exists(filePath);
         if (flag)
         {
-            throw new FileNotFoundException("Файл не найден: " + filePath);
+            throw new FileNotFoundException("File not found: " + filePath);
         }
         byte[] wav = File.ReadAllBytes(filePath);
         WavUtility.WAV wav2 = new WavUtility.WAV(wav);
