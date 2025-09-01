@@ -319,7 +319,6 @@ namespace SatsumaSoundCustomizer
                     repeatOrNot = false;
                     coldLoop = false;
                     RefreshSettings();
-                    // !!! for changing volumes and pitch. start the car, DONT TURN OFF YET! set the sliders to your desired values. turn of the car and start again. the settings should apply ingame
                     ModConsole.Print("it can change sounds again");
                     activeTimer = 0;
                 }
@@ -335,7 +334,7 @@ namespace SatsumaSoundCustomizer
 
             activeTimer1 += Time.deltaTime;
 
-            if (activeTimer1 >= 0.1f && proccesCanRepeat == false)
+            if (activeTimer1 >= 1f && proccesCanRepeat == false)
             {
                 activeTimer1 = 0f;
                 coolantTemp = coolingFsm.FsmVariables.GetFsmFloat("CoolantTemp").Value;
