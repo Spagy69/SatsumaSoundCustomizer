@@ -33,6 +33,7 @@ namespace SatsumaSoundCustomizer
         public static float coolantTemp;
         private bool coldStartSettingBool;
         private bool coldLoop;
+        private bool repeatOrNot;
 
         public static SettingsCheckBox coldStartSetting;
 
@@ -224,7 +225,8 @@ namespace SatsumaSoundCustomizer
             warmEngineRacingCarbThrottleVolume = Settings.AddSlider(this, "warmEngineRacingCarbThrottleVolumeSlider", "Warm engine Throttle volume (Racing carburetors)", 0f, 3.0f, 1.0f);
             warmEngineRacingCarbNoThrottlePitch = Settings.AddSlider(this, "warmEngineRacingCarbNoThrottlePitchSlider", "Warm engine No Throttle pitch (Racing carburetors)", 0f, 3.0f, 1.0f);
             warmEngineRacingCarbNoThrottleVolume = Settings.AddSlider(this, "warmEngineRacingCarbNoThrottleVolumeSlider", "Warm engine No Throttle volume (Racing carburetors)", 0f, 3.0f, 1.0f);
-
+            Settings.AddText(this, "");
+            Settings.AddButton("APPLY SETTINGS", RefreshSettings);
 
         }
 
@@ -246,11 +248,11 @@ namespace SatsumaSoundCustomizer
         {
             instanceMod = this;
 
-            RefreshSettings();
-
             ColdEngineCarburators.Mod_OnLoad();
             WarmEngineCarburators.Mod_OnLoad();
             Exhaust.Mod_OnLoad();
+
+            RefreshSettings();
 
             startedOrNot = false;
 
@@ -314,6 +316,10 @@ namespace SatsumaSoundCustomizer
                 {
                     startedOrNot = false;
                     proccesCanRepeat = false;
+                    repeatOrNot = false;
+                    coldLoop = false;
+                    RefreshSettings();
+                    // !!! for changing volumes and pitch. start the car, DONT TURN OFF YET! set the sliders to your desired values. turn of the car and start again. the settings should apply ingame
                     ModConsole.Print("it can change sounds again");
                     activeTimer = 0;
                 }
@@ -331,43 +337,45 @@ namespace SatsumaSoundCustomizer
 
             if (activeTimer1 >= 0.1f && proccesCanRepeat == false)
             {
+                activeTimer1 = 0f;
                 coolantTemp = coolingFsm.FsmVariables.GetFsmFloat("CoolantTemp").Value;
 
                 if (coolantTemp <= 69 && coldStartSettingBool == true)
                 {
                     // Calls Cold Engine Carburators
                     // Calls Exhaust
-                    Exhaust.ExhaustSoundChange();
-                    if (coldLoop == false) 
+                    if (coldLoop == false)
                     {
-                    ColdEngineCarburators.ColdEngineCarburatorsSounds();
+                        Exhaust.ExhaustSoundChange();
+                        ColdEngineCarburators.ColdEngineCarburatorsSounds();
                         coldLoop = true;
                     }
+
                 }
                 else if (coolantTemp >= 70 && coldStartSettingBool == true)
                 {
                     // Calls Warm Engine Carburators
                     // Calls Exhaust
-                    Exhaust.ExhaustSoundChange();
-                    WarmEngineCarburators.WarmEngineCarburatorsSounds();
                     ModConsole.Print("coolant warm");
                     proccesCanRepeat = true;
                     startedOrNot = true;
+                    Exhaust.ExhaustSoundChange();
+                    WarmEngineCarburators.WarmEngineCarburatorsSounds();
                 }
                 else if (coldStartSettingBool == false)
                 {
                     // Calls Warm Engine Carburators
                     // Calls Exhaust
-                    Exhaust.ExhaustSoundChange();
-                    WarmEngineCarburators.WarmEngineCarburatorsSounds();
                     proccesCanRepeat = true;
                     startedOrNot = true;
+                    Exhaust.ExhaustSoundChange();
+                    WarmEngineCarburators.WarmEngineCarburatorsSounds();
                 }
-                activeTimer1 = 0f;
             }
         }
         public void RefreshSettings()
         {
+            // APPLIES SETTINGS IN GAME. YOU HAVE TO TURN OFF AND ON THE CAR TO APPLY CHANGES 
             coldStartSettingBool = coldStartSetting.GetValue();
 
             coldEngineStockCarbThrottlePitchFloat = coldEngineStockCarbThrottlePitch.GetValue();
@@ -399,6 +407,30 @@ namespace SatsumaSoundCustomizer
             warmEngineRacingCarbThrottleVolumeFloat = warmEngineRacingCarbThrottleVolume.GetValue();
             warmEngineRacingCarbNoThrottlePitchFloat = warmEngineRacingCarbNoThrottlePitch.GetValue();
             warmEngineRacingCarbNoThrottleVolumeFloat = warmEngineRacingCarbNoThrottleVolume.GetValue();
+
+            GameObject coolingSatsumaRefresh = GameObject.Find("SATSUMA(557kg, 248)/CarSimulation/Car/Cooling");
+            PlayMakerFSM coolingFsmRefresh = coolingSatsumaRefresh.GetComponent<PlayMakerFSM>();
+            float coolantTempRefresh = coolingFsmRefresh.FsmVariables.GetFsmFloat("CoolantTemp").Value;
+
+            if (coolantTempRefresh <= 69 && coldStartSettingBool == true)
+            {
+                Exhaust.ExhaustSoundChange();
+                WarmEngineCarburators.WarmEngineCarburatorsSounds();
+                ColdEngineCarburators.ColdEngineCarburatorsSounds();
+            }
+
+            else if (coolantTempRefresh >= 70 && coldStartSettingBool == true)
+            {
+                Exhaust.ExhaustSoundChange();
+                ColdEngineCarburators.ColdEngineCarburatorsSounds();
+                WarmEngineCarburators.WarmEngineCarburatorsSounds();
+            }
+
+            else if (coldStartSettingBool == false)
+            {
+                Exhaust.ExhaustSoundChange();
+                WarmEngineCarburators.WarmEngineCarburatorsSounds();
+            }
         }
     }
 }
