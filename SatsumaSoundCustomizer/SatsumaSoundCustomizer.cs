@@ -143,11 +143,9 @@ namespace SatsumaSoundCustomizer
         private GameObject powerOn;
 
         private float activeTimer;
-        private float activeTimer1;
 
         private bool startedOrNot;
         private bool proccesCanRepeat;
-        private bool refreshOnPowerOn;
         public override void ModSetup()
         {
             SetupFunction(Setup.OnMenuLoad, Mod_OnMenuLoad);
@@ -348,7 +346,6 @@ namespace SatsumaSoundCustomizer
                     startedOrNot = false;
                     proccesCanRepeat = false;
                     coldLoop = false;
-                    refreshOnPowerOn = false;
                     ModConsole.Print("it can change sounds again");
                     activeTimer = 0;
                 }
