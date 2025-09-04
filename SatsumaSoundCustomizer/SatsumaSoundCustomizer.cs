@@ -2,6 +2,8 @@
 using JetBrains.Annotations;
 using MSCLoader;
 using Steamworks;
+using System;
+using System.IO;
 using TanjentOGG;
 using UnityEngine;
 
@@ -13,7 +15,7 @@ namespace SatsumaSoundCustomizer
         public override string Name => "Satsuma Sound Customizer"; // Your mod name
         public override string Author => "Spagy"; // Name of the Author (your name)
         public override string Version => "3.0"; // Version
-        public override string Description => "Customizes Satsuma's engine sounds based on carburetor type and engine temperature"; // Short description of your mod
+        public override string Description => "Customizes Satsuma's engine sounds based on carburetor type, exhaust system and engine temperature"; // Short description of your mod
 
         public static SatsumaSoundCustomizer instanceMod;
         
@@ -33,7 +35,6 @@ namespace SatsumaSoundCustomizer
         public static float coolantTemp;
         private bool coldStartSettingBool;
         private bool coldLoop;
-        private bool repeatOrNot;
 
         public static SettingsCheckBox coldStartSetting;
 
@@ -70,6 +71,8 @@ namespace SatsumaSoundCustomizer
         public static SettingsSlider enginePitch;
         public static SettingsSlider engineVolume;
 
+        public static SettingsSlider engineWarmupTemp;
+
         public static SettingsSlider stockHeadersPitch;
         public static SettingsSlider stockHeadersVolume;
         public static SettingsSlider stockPipePitch;
@@ -84,6 +87,26 @@ namespace SatsumaSoundCustomizer
         public static SettingsSlider racingMufflerPitch;
         public static SettingsSlider racingMufflerVolume;
 
+        public static float enginePitchFloat;
+        public static float engineVolumeFloat;
+
+        public static float stockHeadersPitchFloat;
+        public static float stockHeadersVolumeFloat;
+
+        public static float stockPipePitchFloat;
+        public static float stockPipeVolumeFloat;
+
+        public static float stockMufflerPitchFloat;
+        public static float stockMufflerVolumeFloat;
+
+        public static float racingHeadersPitchFloat;
+        public static float racingHeadersVolumeFloat;
+
+        public static float racingPipePitchFloat;
+        public static float racingPipeVolumeFloat;
+
+        public static float racingMufflerPitchFloat;
+        public static float racingMufflerVolumeFloat;
 
 
         public static float coldEngineStockCarbThrottlePitchFloat;
@@ -124,6 +147,7 @@ namespace SatsumaSoundCustomizer
 
         private bool startedOrNot;
         private bool proccesCanRepeat;
+        private bool refreshOnPowerOn;
         public override void ModSetup()
         {
             SetupFunction(Setup.OnMenuLoad, Mod_OnMenuLoad);
@@ -205,6 +229,10 @@ namespace SatsumaSoundCustomizer
             Settings.AddText(this, "<b><size=25>Warm engine settings:</size></b>");
             Settings.AddText(this, "<i>Required for proper sound transition when cold start is enabled. If cold start is disabled, these settings will still apply to the regular engine sounds.</i>");
             Settings.AddText(this, "");
+            Settings.AddText(this, "<b>Engine warmup threshold:</b>");
+            engineWarmupTemp = Settings.AddSlider(this, "engineWarmupTempSlider", "Coolant temperature to switch from cold to warm", 24f, 100f, 70f);
+            Settings.AddText(this, "(You can ignore this if you have Cold start off)");
+            Settings.AddText(this, "");
 
             Settings.AddText(this, "<b>Stock carburetor:</b>");
             warmEngineStockCarbThrottlePitch = Settings.AddSlider(this, "warmEngineStockCarbThrottlePitchSlider", "Warm engine Throttle pitch (Stock carburetor)", 0f, 3.0f, 1.0f);
@@ -252,7 +280,6 @@ namespace SatsumaSoundCustomizer
             WarmEngineCarburators.Mod_OnLoad();
             Exhaust.Mod_OnLoad();
 
-            RefreshSettings();
 
             startedOrNot = false;
 
@@ -289,6 +316,7 @@ namespace SatsumaSoundCustomizer
         private void Mod_PostLoad()
         {
             // Called once, after all mods finished OnLoad
+            RefreshSettings();
         }
         private void Mod_OnSave()
         {
@@ -304,11 +332,14 @@ namespace SatsumaSoundCustomizer
 
 
 
-            if (powerOn.activeSelf == true && startedOrNot == false)
+            if (powerOn.activeSelf == true)
             {
                 PowerON();
             }
-            if (powerOn.activeSelf == false && startedOrNot == true)
+
+            bool power = GameObject.Find("SATSUMA(557kg, 248)/Electricity").GetComponent<PlayMakerFSM>().FsmVariables.GetFsmBool("ElectricsOK").Value;
+
+            if (powerOn.activeSelf == false && startedOrNot == true && power == false)
             {
                 activeTimer += Time.deltaTime;
 
@@ -316,9 +347,8 @@ namespace SatsumaSoundCustomizer
                 {
                     startedOrNot = false;
                     proccesCanRepeat = false;
-                    repeatOrNot = false;
                     coldLoop = false;
-                    RefreshSettings();
+                    refreshOnPowerOn = false;
                     ModConsole.Print("it can change sounds again");
                     activeTimer = 0;
                 }
@@ -332,26 +362,25 @@ namespace SatsumaSoundCustomizer
         public void PowerON()
         {
 
-            activeTimer1 += Time.deltaTime;
-
-            if (activeTimer1 >= 1f && proccesCanRepeat == false)
+            if (proccesCanRepeat == false)
             {
-                activeTimer1 = 0f;
                 coolantTemp = coolingFsm.FsmVariables.GetFsmFloat("CoolantTemp").Value;
 
-                if (coolantTemp <= 69 && coldStartSettingBool == true)
+                if (coolantTemp < engineWarmupTemp.GetValue() && coldStartSettingBool == true) 
                 {
+                    startedOrNot = true;
                     // Calls Cold Engine Carburators
                     // Calls Exhaust
                     if (coldLoop == false)
                     {
+                        ModConsole.Print("coolant cold");
                         Exhaust.ExhaustSoundChange();
                         ColdEngineCarburators.ColdEngineCarburatorsSounds();
                         coldLoop = true;
                     }
 
                 }
-                else if (coolantTemp >= 70 && coldStartSettingBool == true)
+                else if (coolantTemp > engineWarmupTemp.GetValue() && coldStartSettingBool == true)
                 {
                     // Calls Warm Engine Carburators
                     // Calls Exhaust
@@ -376,6 +405,28 @@ namespace SatsumaSoundCustomizer
         {
             // APPLIES SETTINGS IN GAME. YOU HAVE TO TURN OFF AND ON THE CAR TO APPLY CHANGES 
             coldStartSettingBool = coldStartSetting.GetValue();
+
+            enginePitchFloat = enginePitch.GetValue();
+            engineVolumeFloat = engineVolume.GetValue();
+
+            stockHeadersPitchFloat = stockHeadersPitch.GetValue();
+            stockHeadersVolumeFloat = stockHeadersVolume.GetValue();
+
+            stockPipePitchFloat = stockPipePitch.GetValue();
+            stockPipeVolumeFloat = stockPipeVolume.GetValue();
+
+            stockMufflerPitchFloat = stockMufflerPitch.GetValue();
+            stockMufflerVolumeFloat = stockMufflerVolume.GetValue();
+
+            racingHeadersPitchFloat = racingHeadersPitch.GetValue();
+            racingHeadersVolumeFloat = racingHeadersVolume.GetValue();
+
+            racingPipePitchFloat = racingPipePitch.GetValue();
+            racingPipeVolumeFloat = racingPipeVolume.GetValue();
+
+            racingMufflerPitchFloat = racingMufflerPitch.GetValue();
+            racingMufflerVolumeFloat = racingMufflerVolume.GetValue();
+
 
             coldEngineStockCarbThrottlePitchFloat = coldEngineStockCarbThrottlePitch.GetValue();
             coldEngineStockCarbThrottleVolumeFloat = coldEngineStockCarbThrottleVolume.GetValue();
@@ -411,14 +462,14 @@ namespace SatsumaSoundCustomizer
             PlayMakerFSM coolingFsmRefresh = coolingSatsumaRefresh.GetComponent<PlayMakerFSM>();
             float coolantTempRefresh = coolingFsmRefresh.FsmVariables.GetFsmFloat("CoolantTemp").Value;
 
-            if (coolantTempRefresh <= 69 && coldStartSettingBool == true)
+            if (coolantTempRefresh < engineWarmupTemp.GetValue() && coldStartSettingBool == true)
             {
                 Exhaust.ExhaustSoundChange();
                 WarmEngineCarburators.WarmEngineCarburatorsSounds();
                 ColdEngineCarburators.ColdEngineCarburatorsSounds();
             }
 
-            else if (coolantTempRefresh >= 70 && coldStartSettingBool == true)
+            else if (coolantTempRefresh > engineWarmupTemp.GetValue() && coldStartSettingBool == true)
             {
                 Exhaust.ExhaustSoundChange();
                 ColdEngineCarburators.ColdEngineCarburatorsSounds();
